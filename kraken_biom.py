@@ -29,13 +29,13 @@ except ImportError:
 
 __author__ = "Shareef M. Dabdoub"
 __copyright__ = "Copyright 2016, Shareef M. Dabdoub"
-__credits__ = ["Shareef M. Dabdoub", "Akshay Paropkari", 
-               "Sukirth Ganesan", "Purnima Kumar"]
+__credits__ = ["Shareef M. Dabdoub", "Akshay Paropkari",
+               "Sukirth Ganesan", "Purnima Kumar", "C. Prins"]
 __license__ = "MIT"
 __url__ = "http://github.com/smdabdoub/kraken-biom"
 __maintainer__ = "Shareef M. Dabdoub"
 __email__ = "dabdoub.2@osu.edu"
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 
 field_names = ["pct_reads", "clade_reads", "taxon_reads", 
@@ -68,8 +68,7 @@ def tax_fmt(tax_lvl, end,unclassified=False):
         if "S" in tax_lvl and tax_lvl["SS"].startswith(tax_lvl["S"]):
             tax_lvl["SS"] = tax_lvl["SS"][len(tax_lvl["S"])+1:]
     
-    # print(ranks[:end])
-    tax = ["{}__{}".format(r.lower(), tax_lvl[r] if r in tax_lvl else '') 
+    tax = ["{}__{}".format(r.lower(), tax_lvl[r] if r in tax_lvl else '')
              for r in ranks[:end+1]]
 
     # add empty identifiers for ranks beyond end
@@ -134,7 +133,6 @@ def parse_kraken_report(kdata, max_rank, min_rank):
 
     for entry in kdata:
         erank = entry['rank'].strip()
-        # print("erank: "+erank)
 
         if erank in ranks:
             r = ranks.index(erank)
@@ -152,8 +150,8 @@ def parse_kraken_report(kdata, max_rank, min_rank):
                     counts[entry['ncbi_tax']] = clade_reads
                 else:
                     counts[entry['ncbi_tax']] = taxon_reads
-                # print("  Counting {} reads at {}".format(counts[entry['ncbi_tax']], '; '.join(taxa[entry['ncbi_tax']])))
-        # print
+
+        # adds the unclassified reads to the biom file.
         if erank == "U":
             clade_reads = int(entry["clade_reads"])
             taxa[entry['ncbi_tax']] = tax_fmt(tax_lvl, r, unclassified=True)
@@ -163,6 +161,7 @@ def parse_kraken_report(kdata, max_rank, min_rank):
 
 
         #TODO: handle subspecies
+        #TODO: Need to get some data to test this.
         #if erank == '-' and min_rank == "SS" and last_entry_indent < curr_indent:
         #    pass
     return counts, taxa
@@ -186,9 +185,7 @@ def process_samples(kraken_reports_fp, max_rank, min_rank):
             try:
                 kdr = csv.DictReader(kf, fieldnames=field_names, 
                                      delimiter="\t")
-                # kdata = [entry for entry in kdr][1:]
-                kdata = [entry for entry in kdr][0:]
-                # print(kdata)
+                kdata = [entry for entry in kdr][0:] # from 1 to 0 so we read the unclassified
             except OSError as oe:
                 raise RuntimeError("ERROR: {}".format(oe))
 
