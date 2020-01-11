@@ -29,13 +29,13 @@ except ImportError:
 
 __author__ = "Shareef M. Dabdoub"
 __copyright__ = "Copyright 2016, Shareef M. Dabdoub"
-__credits__ = ["Shareef M. Dabdoub", "Akshay Paropkari", 
-               "Sukirth Ganesan", "Purnima Kumar"]
+__credits__ = ["Shareef M. Dabdoub", "Akshay Paropkari",
+               "Sukirth Ganesan", "Purnima Kumar", "C. Prins"]
 __license__ = "MIT"
 __url__ = "http://github.com/smdabdoub/kraken-biom"
 __maintainer__ = "Shareef M. Dabdoub"
 __email__ = "dabdoub.2@osu.edu"
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 
 field_names = ["pct_reads", "clade_reads", "taxon_reads", 
@@ -44,7 +44,7 @@ ranks = ["D", "P", "C", "O", "F", "G", "S", "SS"]
 
 
 
-def tax_fmt(tax_lvl, end):
+def tax_fmt(tax_lvl, end,unclassified=False):
     """
     Create a string representation of a taxonomic hierarchy (QIIME for now).
 
@@ -59,6 +59,8 @@ def tax_fmt(tax_lvl, end):
     ... "S": "Veillonella parvula", "SS": "Veillonella parvula DSM 2008"}, 4)
     'k__Bacteria; p__Firmicutes; c__Negativicutes; o__Selenomonadales'
     """
+
+
     if "S" in tax_lvl:
         if "G" in tax_lvl and tax_lvl["S"].startswith(tax_lvl["G"]):
             tax_lvl["S"] = tax_lvl["S"][len(tax_lvl["G"])+1:]
@@ -66,13 +68,14 @@ def tax_fmt(tax_lvl, end):
         if "S" in tax_lvl and tax_lvl["SS"].startswith(tax_lvl["S"]):
             tax_lvl["SS"] = tax_lvl["SS"][len(tax_lvl["S"])+1:]
     
-    # print(ranks[:end])
-    tax = ["{}__{}".format(r.lower(), tax_lvl[r] if r in tax_lvl else '') 
+    tax = ["{}__{}".format(r.lower(), tax_lvl[r] if r in tax_lvl else '')
              for r in ranks[:end+1]]
+
     # add empty identifiers for ranks beyond end
     #TODO: remove the :-1 when SS support is added
     tax.extend(["{}__".format(r.lower()) for r in ranks[end+1:-1]])
-
+    if unclassified:
+        tax = ["{}__{}".format(r.lower(), "Unclassified")  for r in ranks[:-1]]
     # even though Bacteria, Archea are now technically Domains/superkingdoms
     # GreenGenes and other databases still list the traditional 
     # kingdom/phylum/class/etc. So this is a hack to shoehorn the kraken-report
@@ -80,7 +83,6 @@ def tax_fmt(tax_lvl, end):
     if tax[0].startswith('d'):
         tax[0] = "k"+tax[0][1:]
 
-    # print(tax)
     return tax
 
 
@@ -131,7 +133,6 @@ def parse_kraken_report(kdata, max_rank, min_rank):
 
     for entry in kdata:
         erank = entry['rank'].strip()
-        # print("erank: "+erank)
 
         if erank in ranks:
             r = ranks.index(erank)
@@ -149,10 +150,18 @@ def parse_kraken_report(kdata, max_rank, min_rank):
                     counts[entry['ncbi_tax']] = clade_reads
                 else:
                     counts[entry['ncbi_tax']] = taxon_reads
-                # print("  Counting {} reads at {}".format(counts[entry['ncbi_tax']], '; '.join(taxa[entry['ncbi_tax']])))
-        
+
+        # adds the unclassified reads to the biom file.
+        if erank == "U":
+            clade_reads = int(entry["clade_reads"])
+            taxa[entry['ncbi_tax']] = tax_fmt(tax_lvl, r, unclassified=True)
+            counts[entry['ncbi_tax']] = clade_reads
+
+
+
 
         #TODO: handle subspecies
+        #TODO: Need to get some data to test this.
         #if erank == '-' and min_rank == "SS" and last_entry_indent < curr_indent:
         #    pass
     return counts, taxa
@@ -176,7 +185,7 @@ def process_samples(kraken_reports_fp, max_rank, min_rank):
             try:
                 kdr = csv.DictReader(kf, fieldnames=field_names, 
                                      delimiter="\t")
-                kdata = [entry for entry in kdr][1:]
+                kdata = [entry for entry in kdr][0:] # from 1 to 0 so we read the unclassified
             except OSError as oe:
                 raise RuntimeError("ERROR: {}".format(oe))
 
