@@ -9,7 +9,6 @@ import kraken_biom as kb
 from test.test_parsing import prep_kraken_input
 
 
-
 class kraken_biom_Test(unittest.TestCase):
     def setUp(self):
         self.krepA = twdd(u"""\
@@ -230,78 +229,91 @@ class kraken_biom_Test(unittest.TestCase):
         self.fps = [tempf_krepA.name, tempf_krepB.name]
         self.fnames = [osp.split(fp)[1] for fp in self.fps]
 
-        self.sample_counts, self.taxa = kb.process_samples(self.fps, 
-                                                           max_rank="O", 
+        self.sample_counts, self.taxa = kb.process_samples(self.fps,
+                                                           max_rank="O",
                                                            min_rank="S")
 
     def test_sample_ids(self):
         proc_snames = set(self.sample_counts)
 
-        self.assertEqual(proc_snames.symmetric_difference(self.fnames), set())
-
+        self.assertEqual(proc_snames.symmetric_difference(self.fnames),
+                         set())
 
     def test_sample_counts(self):
-        countsA = {'265522': 2, '1382': 2, '11036': 2, '37734': 9, '1747': 1,
-                   '374840': 2, '543': 6, '562': 1, '179636': 2, '28108': 10,
-                   '12916': 2, '1303': 3, '1308': 1, '135622': 1, '1318': 2,
-                   '2188': 1, '2214': 1, '29288': 8, '329': 11, '1301': 8,
-                   '101192': 3, '45617': 1, '1305': 1, '1304': 5, '186802': 1}
-        countsB = {'265522': 2, '1382': 2, '11036': 2, '37734': 9, '1747': 1,
-                   '374840': 2, '543': 6, '562': 1, '179636': 2, '28108': 10,
-                   '12916': 2, '1303': 3, '1308': 1, '135622': 1, '1318': 2,
-                   '2188': 1, '2214': 1, '29288': 8, '329': 11, '1301': 8,
-                   '101192': 3, '1305': 1, '1304': 5, '186802': 1}
+        countsA = {'265522': 2, '1382': 2, '11036': 2, '37734': 9,
+                   '1747': 1,
+                   '374840': 2, '543': 6, '562': 1, '179636': 2,
+                   '28108': 10,
+                   '12916': 2, '1303': 3, '1308': 1, '135622': 1,
+                   '1318': 2,
+                   '2188': 1, '2214': 1, '29288': 8, '329': 11,
+                   '1301': 8,
+                   '101192': 3, '45617': 1, '1305': 1, '1304': 5,
+                   '186802': 1, "0": 6783846}
+        countsB = {'265522': 2, '1382': 2, '11036': 2, '37734': 9,
+                   '1747': 1,
+                   '374840': 2, '543': 6, '562': 1, '179636': 2,
+                   '28108': 10,
+                   '12916': 2, '1303': 3, '1308': 1, '135622': 1,
+                   '1318': 2,
+                   '2188': 1, '2214': 1, '29288': 8, '329': 11,
+                   '1301': 8,
+                   '101192': 3, '1305': 1, '1304': 5, '186802': 1,
+                   "0": 6783846}
 
         proc_countsA = self.sample_counts[self.fnames[0]]
         proc_countsB = self.sample_counts[self.fnames[1]]
-
+        print(proc_countsA)
         self.assertTrue(all([countsA[otu_id] == proc_countsA[otu_id]
-                               for otu_id in countsA]))
+                             for otu_id in countsA]))
         self.assertTrue(all([countsA[otu_id] == proc_countsA[otu_id]
-                               for otu_id in proc_countsA]))
+                             for otu_id in proc_countsA]))
 
         self.assertTrue(all([countsB[otu_id] == proc_countsB[otu_id]
-                               for otu_id in countsB]))
+                             for otu_id in countsB]))
         self.assertTrue(all([countsB[otu_id] == proc_countsB[otu_id]
-                               for otu_id in proc_countsB]))
-
+                             for otu_id in proc_countsB]))
 
     def test_taxa(self):
-        manual = {"1304":  ["k__Bacteria", "p__Firmicutes", "c__Bacilli",
-                            "o__Lactobacillales", "f__Streptococcaceae",
-                            "g__Streptococcus", "s__salivarius"],
-                  "29288": ["k__Archaea", "p__Euryarchaeota", "c__Halobacteria",
+        manual = {"1304": ["k__Bacteria", "p__Firmicutes", "c__Bacilli",
+                           "o__Lactobacillales", "f__Streptococcaceae",
+                           "g__Streptococcus", "s__salivarius"],
+                  "29288": ["k__Archaea", "p__Euryarchaeota",
+                            "c__Halobacteria",
                             "o__Natrialbales", "f__Natrialbaceae",
                             "g__Natronococcus", "s__occultus"],
-                  "45617": ["k__Viruses", "p__", "c__", "o__", "f__Retroviridae",
+                  "45617": ["k__Viruses", "p__", "c__", "o__",
+                            "f__Retroviridae",
                             "g__", "s__Human endogenous retrovirus K"],
-                  "1301":  ["k__Bacteria", "p__Firmicutes", "c__Bacilli",
-                             "o__Lactobacillales", "f__Streptococcaceae",
-                             "g__Streptococcus", "s__"],
-                  "135622":["k__Bacteria", "p__Proteobacteria", 
-                            "c__Gammaproteobacteria", "o__Alteromonadales", 
-                            "f__", "g__", "s__"],
-                  "543":   ["k__Bacteria", "p__Proteobacteria", 
-                            "c__Gammaproteobacteria", "o__Enterobacteriales", 
-                            "f__Enterobacteriaceae", "g__", "s__"],
-                  "265522":["k__Viruses", "p__", "c__", "o__", 
-                            "f__Polydnaviridae", "g__Ichnovirus", 
-                            "s__Hyposoter fugitivus ichnovirus"],
-                  "374840":["k__Viruses", "p__", "c__", "o__", 
-                            "f__Microviridae", "g__Microvirus", 
-                            "s__Enterobacteria phage phiX174 sensu lato"]
-                 }
+                  "1301": ["k__Bacteria", "p__Firmicutes", "c__Bacilli",
+                           "o__Lactobacillales", "f__Streptococcaceae",
+                           "g__Streptococcus", "s__"],
+                  "135622": ["k__Bacteria", "p__Proteobacteria",
+                             "c__Gammaproteobacteria",
+                             "o__Alteromonadales",
+                             "f__", "g__", "s__"],
+                  "543": ["k__Bacteria", "p__Proteobacteria",
+                          "c__Gammaproteobacteria",
+                          "o__Enterobacteriales",
+                          "f__Enterobacteriaceae", "g__", "s__"],
+                  "265522": ["k__Viruses", "p__", "c__", "o__",
+                             "f__Polydnaviridae", "g__Ichnovirus",
+                             "s__Hyposoter fugitivus ichnovirus"],
+                  "374840": ["k__Viruses", "p__", "c__", "o__",
+                             "f__Microviridae", "g__Microvirus",
+                             "s__Enterobacteria phage phiX174 sensu lato"],
+                  "0": ["k__Unclassified", "p__Unclassified",
+                        "c__Unclassified", "o__Unclassified",
+                        "f__Unclassified", "g__Unclassified",
+                        "s__Unclassified"]
+                  }
 
-        self.assertTrue(all([manual[tax_id] == self.taxa[tax_id] 
-                               for tax_id in manual]))
-
-
+        self.assertTrue(all([manual[tax_id] == self.taxa[tax_id]
+                             for tax_id in manual]))
 
     def tearDown(self):
         pass
 
 
-
 if __name__ == '__main__':
     unittest.main()
-            
