@@ -12,8 +12,9 @@ import kraken_biom as kb
 
 
 def prep_kraken_input(data):
-    kdr = csv.DictReader(data, fieldnames=kb.field_names, delimiter="\t")
-    return [entry for entry in kdr][1:]
+    kdr = csv.DictReader(data, fieldnames=kb.field_names,
+                         delimiter="\t")
+    return [entry for entry in kdr]  # [1:] -> not skipping unclassified
 
 
 class kraken_biom_Test(unittest.TestCase):
@@ -143,15 +144,16 @@ class kraken_biom_Test(unittest.TestCase):
 
     def run_parse_kraken_report(self, manual, max_rank, min_rank):
         counts, _ = kb.parse_kraken_report(self.sample_kraken_rep,
-                                              max_rank=max_rank, 
-                                              min_rank=min_rank)
+                                           max_rank=max_rank,
+                                           min_rank=min_rank)
 
         # Check that there are no differences in taxonomy IDs
-        self.assertTrue(len(set(counts).symmetric_difference(set(manual))) == 0)
+        self.assertTrue(
+            len(set(counts).symmetric_difference(set(manual))) == 0)
 
         # Check that the counts are equivalent
-        self.assertTrue(all([manual[tax_id] == counts[tax_id] for tax_id in counts]))
-
+        self.assertTrue(all(
+            [manual[tax_id] == counts[tax_id] for tax_id in counts]))
 
     def test_parse_kraken_report_O_S(self):
         manual = {'101192': 3,
@@ -180,10 +182,11 @@ class kraken_biom_Test(unittest.TestCase):
                   '45617': 1,
                   '543': 6,
                   '562': 1,
-                  '5693': 1}
+                  '5693': 1,
+                  "0": 6783846
+                  }
 
-        self.run_parse_kraken_report(manual,  max_rank="O", min_rank="S")
-
+        self.run_parse_kraken_report(manual, max_rank="O", min_rank="S")
 
     def test_parse_kraken_report_F_S(self):
         manual = {'101192': 3,
@@ -210,10 +213,11 @@ class kraken_biom_Test(unittest.TestCase):
                   '45617': 1,
                   '543': 6,
                   '562': 1,
-                  '5693': 1}
+                  '5693': 1,
+                  "0": 6783846
+                  }
 
-        self.run_parse_kraken_report(manual,  max_rank="F", min_rank="S")
-
+        self.run_parse_kraken_report(manual, max_rank="F", min_rank="S")
 
     def test_parse_kraken_report_G_S(self):
         manual = {'101192': 3,
@@ -239,10 +243,11 @@ class kraken_biom_Test(unittest.TestCase):
                   '37734': 9,
                   '45617': 1,
                   '562': 1,
-                  '5693': 1}
+                  '5693': 1,
+                  "0": 6783846
+                  }
 
-        self.run_parse_kraken_report(manual,  max_rank="G", min_rank="S")
-
+        self.run_parse_kraken_report(manual, max_rank="G", min_rank="S")
 
     def test_parse_kraken_report_S(self):
         manual = {'101192': 3,
@@ -266,10 +271,10 @@ class kraken_biom_Test(unittest.TestCase):
                   '37734': 9,
                   '45617': 1,
                   '562': 1,
-                  '5693': 1}
+                  '5693': 1,
+                  "0": 6783846}
 
-        self.run_parse_kraken_report(manual,  max_rank="S", min_rank="S")
-
+        self.run_parse_kraken_report(manual, max_rank="S", min_rank="S")
 
     def test_parse_kraken_report_C_G(self):
         manual = {'101191': 3,
@@ -295,50 +300,59 @@ class kraken_biom_Test(unittest.TestCase):
                   '543': 6,
                   '561': 1,
                   '75966': 1,
-                  '5690': 1}
+                  '5690': 1,
+                  "0": 6783846}
 
-        self.run_parse_kraken_report(manual,  max_rank="C", min_rank="G")
-
+        self.run_parse_kraken_report(manual, max_rank="C", min_rank="G")
 
     def test_parse_kraken_report_taxonomy(self):
-        manual = {"1304":  ["k__Bacteria", "p__Firmicutes", "c__Bacilli",
-                            "o__Lactobacillales", "f__Streptococcaceae",
-                            "g__Streptococcus", "s__salivarius"],
-                  "29288": ["k__Archaea", "p__Euryarchaeota", "c__Halobacteria",
+        manual = {"1304": ["k__Bacteria", "p__Firmicutes", "c__Bacilli",
+                           "o__Lactobacillales", "f__Streptococcaceae",
+                           "g__Streptococcus", "s__salivarius"],
+                  "29288": ["k__Archaea", "p__Euryarchaeota",
+                            "c__Halobacteria",
                             "o__Natrialbales", "f__Natrialbaceae",
                             "g__Natronococcus", "s__occultus"],
-                  "45617": ["k__Viruses", "p__", "c__", "o__", "f__Retroviridae",
+                  "45617": ["k__Viruses", "p__", "c__", "o__",
+                            "f__Retroviridae",
                             "g__", "s__Human endogenous retrovirus K"],
-                  "1301":  ["k__Bacteria", "p__Firmicutes", "c__Bacilli",
-                             "o__Lactobacillales", "f__Streptococcaceae",
-                             "g__Streptococcus", "s__"],
-                  "135622":["k__Bacteria", "p__Proteobacteria", 
-                            "c__Gammaproteobacteria", "o__Alteromonadales", 
-                            "f__", "g__", "s__"],
-                  "543":   ["k__Bacteria", "p__Proteobacteria", 
-                            "c__Gammaproteobacteria", "o__Enterobacteriales", 
-                            "f__Enterobacteriaceae", "g__", "s__"],
-                  "265522":["k__Viruses", "p__", "c__", "o__", 
-                            "f__Polydnaviridae", "g__Ichnovirus", 
-                            "s__Hyposoter fugitivus ichnovirus"],
-                  "374840":["k__Viruses", "p__", "c__", "o__", 
-                            "f__Microviridae", "g__Microvirus", 
-                            "s__Enterobacteria phage phiX174 sensu lato"],
-                  "5693":["k__Eukaryota", "p__", "c__", "o__Kinetoplastida",
-                          "f__Trypanosomatidae", "g__Trypanosoma", "s__cruzi"]
-                 }
+                  "1301": ["k__Bacteria", "p__Firmicutes", "c__Bacilli",
+                           "o__Lactobacillales", "f__Streptococcaceae",
+                           "g__Streptococcus", "s__"],
+                  "135622": ["k__Bacteria", "p__Proteobacteria",
+                             "c__Gammaproteobacteria",
+                             "o__Alteromonadales",
+                             "f__", "g__", "s__"],
+                  "543": ["k__Bacteria", "p__Proteobacteria",
+                          "c__Gammaproteobacteria",
+                          "o__Enterobacteriales",
+                          "f__Enterobacteriaceae", "g__", "s__"],
+                  "265522": ["k__Viruses", "p__", "c__", "o__",
+                             "f__Polydnaviridae", "g__Ichnovirus",
+                             "s__Hyposoter fugitivus ichnovirus"],
+                  "374840": ["k__Viruses", "p__", "c__", "o__",
+                             "f__Microviridae", "g__Microvirus",
+                             "s__Enterobacteria phage phiX174 sensu lato"],
+                  "5693": ["k__Eukaryota", "p__", "c__",
+                           "o__Kinetoplastida",
+                           "f__Trypanosomatidae", "g__Trypanosoma",
+                           "s__cruzi"],
+                  "0": ["k__Unclassified", "p__Unclassified",
+                        "c__Unclassified", "o__Unclassified",
+                        "f__Unclassified", "g__Unclassified",
+                        "s__Unclassified"]
+                  }
 
         _, taxa = kb.parse_kraken_report(self.sample_kraken_rep,
-                                              max_rank="O", 
-                                              min_rank="S")
+                                         max_rank="O",
+                                         min_rank="S")
 
         # Check that the manually assigned taxa are eqivalent to the parsed
-        self.assertTrue(all([manual[tax_id] == taxa[tax_id] for tax_id in manual]))
-
+        self.assertTrue(
+            all([manual[tax_id] == taxa[tax_id] for tax_id in manual]))
 
     def tearDown(self):
         pass
-
 
 
 if __name__ == '__main__':
